@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from pixelbridge.client import (
+from image_bridge.client import (
     GeminiAdapter,
     OpenAIChatAdapter,
     OpenAIImagesAdapter,
     _build_adapter,
 )
-from pixelbridge.types import ImageProvider, ProviderConfig
+from image_bridge.types import ImageProvider, ProviderConfig
 
 
 def test_openai_like_providers_use_openai_images_adapter_by_default() -> None:

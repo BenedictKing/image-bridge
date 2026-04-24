@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import pytest
 
-from pixelbridge.client import (
+from image_bridge.client import (
     ImageClient,
     ImageClientError,
     _build_openai_chat_edit_payload,
     _build_openai_chat_generate_payload,
 )
-from pixelbridge.types import EditRequest, GenerateRequest, ImageEditInput, ImageProvider, ProviderConfig
+from image_bridge.types import EditRequest, GenerateRequest, ImageEditInput, ImageProvider, ProviderConfig
 
 
 def test_build_openai_chat_generate_payload_uses_user_text_message() -> None:

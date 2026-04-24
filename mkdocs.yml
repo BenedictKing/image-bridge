@@ -1,7 +1,7 @@
-site_name: pixelbridge
+site_name: ImageBridge
 site_description: Shared image generation/editing abstraction
-site_url: https://example.invalid/pixelbridge
-repo_name: pixelbridge
+site_url: https://example.invalid/image-bridge
+repo_name: image-bridge
 
 theme:
   name: material
@@ -19,6 +19,6 @@ plugins:
             members_order: source
 
 nav:
-  - 首页: index.md
-  - API:
-      - pixelbridge: api.md
+  - Home: index.md
+  - API Reference:
+      - image_bridge: api.md

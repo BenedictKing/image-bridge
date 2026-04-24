@@ -1,16 +1,19 @@
-# pixelbridge
-统一多供应商图片生成/编辑抽象包。
+# ImageBridge
 
-用于 best-shot 和 best-outfit 共享图片模型访问层。
+[English](README.md) | [简体中文](README.zh-CN.md)
 
-## 设计原则
+ImageBridge is a lightweight Python bridge for image generation and editing across providers and wire protocols.
 
-1. **接口最小化**：对外只暴露两个稳定入口：`generate_image`、`edit_image`
-2. **供应商可替换**：OpenAI / Grok / Jimeng 默认复用 OpenAI Image API 形状，Gemini 走 `generateContent`
-3. **内部多协议**：共享层内部支持 `/images/*`、`/chat/completions`、`generateContent`，但不把协议概念暴露给业务层
-4. **先稳后扩**：当前不纳入 Responses API、多轮会话、流式 partial image、file_id 等高级能力
+It provides a **stable public API** for application code while keeping provider-specific protocol details internal. The current implementation supports OpenAI-compatible image endpoints, OpenAI-compatible chat-based image flows, and Gemini `generateContent` image flows.
 
-## 稳定对外 API
+## Design goals
+
+1. **Keep the public API minimal**: only expose `generate_image` and `edit_image`
+2. **Hide protocol differences** behind provider adapters and internal routing
+3. **Support provider variation** through explicit extension points instead of leaking wire details into app code
+4. **Stay pragmatic**: prefer a narrow, stable surface over premature abstraction of every image capability
+
+## Stable public API
 
 - `ProviderConfig`
 - `GenerateRequest`
@@ -20,10 +23,10 @@
 - `ImageClient.generate_image()`
 - `ImageClient.edit_image()`
 
-## 快速开始
+## Quick start
 
 ```python
-from pixelbridge import GenerateRequest, ImageClient, ImageProvider, ProviderConfig
+from image_bridge import GenerateRequest, ImageClient, ImageProvider, ProviderConfig
 
 client = ImageClient(
     ProviderConfig(
@@ -47,24 +50,24 @@ result = await client.generate_image(
 # result.model_version: str
 ```
 
-## 支持的 Provider
+## Supported providers and default protocols
 
-| Provider | Generation | Edit | 默认协议 |
-|----------|-----------|------|----------|
+| Provider | Generation | Edit | Default protocol |
+|----------|-----------|------|------------------|
 | openai | ✅ | ✅ | OpenAI Image API |
 | grok | ✅ | ✅ | OpenAI-compatible Image API |
 | jimeng | ✅ | ✅ | OpenAI-compatible Image API |
-| gemini | ✅ | ✅ | Gemini generateContent |
+| gemini | ✅ | ✅ | Gemini `generateContent` |
 
-## 内部协议切换
+## Internal protocol override
 
-公共接口不暴露 protocol，但可以通过内部保留参数切换：
+The public API does not expose protocol selection, but the shared layer supports internal overrides via reserved parameters:
 
 - `ProviderConfig.extra_params["_protocol"] = "openai_images"`
 - `ProviderConfig.extra_params["_protocol"] = "openai_chat"`
 - `ProviderConfig.extra_params["_protocol"] = "gemini_generate_content"`
 
-示例：
+Example:
 
 ```python
 client = ImageClient(
@@ -78,58 +81,60 @@ client = ImageClient(
 )
 ```
 
-说明：
-- `_protocol` 是共享层内部实现细节，不应在业务层大面积扩散
-- 未显式指定时：`gemini -> generateContent`，其余默认走 `openai_images`
-- `_protocol` 会在发请求前被剔除，不会透传给供应商接口
+Notes:
 
-## mask 支持边界
+- `_protocol` is an internal implementation detail and should not be widely exposed in application code
+- Without an explicit override, `gemini` uses `generateContent` and the other providers default to `openai_images`
+- `_protocol` is stripped before requests are sent to upstream providers
 
-- `openai_images` / 兼容 `/images/edits`：支持 `EditRequest.mask`
-- `gemini_generate_content`：当前不显式使用 mask 字段，只支持输入参考图
-- `openai_chat`：**当前不支持 mask**，会直接抛出错误，而不是做伪兼容
+## Mask support boundaries
 
-这样可以避免同一个 `EditRequest.mask` 在不同协议下产生不一致语义。
+- `openai_images` and compatible `/images/edits` flows support `EditRequest.mask`
+- `gemini_generate_content` currently supports reference images but does not explicitly map the public `mask` field
+- `openai_chat` currently **does not support mask** and will raise a clear error instead of pretending to support it
 
-## 自动化接口文档
+This keeps the semantics of `EditRequest.mask` explicit and avoids protocol-specific ambiguity.
 
-项目已提供 MkDocs + mkdocstrings 配置：
+## Automated API documentation
 
-- 配置文件：`mkdocs.yml`
-- 文档目录：`docs/`
+The project includes MkDocs + mkdocstrings configuration:
 
-本地预览：
+- config: `mkdocs.yml`
+- docs directory: `docs/`
+
+Preview locally:
 
 ```bash
 python -m pip install -e .[dev]
 mkdocs serve
 ```
 
-静态构建：
+Build static docs:
 
 ```bash
 python -m pip install -e .[dev]
 mkdocs build
 ```
 
-## 当前明确不做
+## Out of scope for now
 
 - Responses API image tool
 - `previous_response_id`
-- 多轮图片会话
+- multi-turn image sessions
 - partial image streaming
-- file_id / files 上传抽象
-- 视频生成抽象
+- file ID / uploads abstraction
+- video generation abstraction
 
-## 供应商差异扩展点
+## Extension points
 
-虽然当前稳定接口只保留 `generate_image` / `edit_image`，但仍预留了两层扩展：
+ImageBridge intentionally keeps protocol-specific differences out of the public API, but leaves two extension points for provider variation:
 
-- `ProviderConfig.extra_params`：供应商级默认参数
-- `GenerateRequest.extra_params` / `EditRequest.extra_params`：单次请求级参数
+- `ProviderConfig.extra_params`: provider-level default parameters
+- `GenerateRequest.extra_params` / `EditRequest.extra_params`: per-request parameters
 
-适用场景：
-- Grok / Jimeng / OpenAI-compatible 在相同 `/images/*` 或 `/chat/completions` 接口上增加自定义字段
-- 某些供应商对 `size` / `quality` / `response_format` 有额外约束或扩展参数
+Typical uses:
 
-设计目标是：**稳定接口不变，差异通过 extra 参数下沉**。
+- OpenAI-compatible providers that add custom request fields on `/images/*` or `/chat/completions`
+- Provider-specific constraints or extensions for `size`, `quality`, or output fields
+
+The design goal is simple: **keep the public API stable and push unavoidable variation into explicit extension points**.

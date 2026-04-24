@@ -1,13 +1,13 @@
 # API Reference
 
-## pixelbridge
+## image_bridge
 
-::: pixelbridge
+::: image_bridge
 
-## pixelbridge.types
+## image_bridge.types
 
-::: pixelbridge.types
+::: image_bridge.types
 
-## pixelbridge.client
+## image_bridge.client
 
-::: pixelbridge.client
+::: image_bridge.client

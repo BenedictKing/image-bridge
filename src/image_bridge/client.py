@@ -7,7 +7,7 @@ from typing import Any
 
 import httpx
 
-from pixelbridge.types import (
+from image_bridge.types import (
     EditRequest,
     GenerateRequest,
     ImageProvider,

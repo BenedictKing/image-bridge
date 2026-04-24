@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pixelbridge.types import EditRequest, GenerateRequest, ImageEditInput
+from image_bridge.types import EditRequest, GenerateRequest, ImageEditInput
 
 
 def test_generate_request_defaults() -> None:

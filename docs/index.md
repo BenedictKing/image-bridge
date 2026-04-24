@@ -1,8 +1,10 @@
-# pixelbridge
+# ImageBridge
 
-`pixelbridge` 是一个共享的图片生成/编辑访问层，面向多个供应商和协议形状，公共接口保持最小稳定。
+ImageBridge is a lightweight Python bridge for image generation and editing across providers and wire protocols.
 
-## 稳定公共接口
+It offers a stable public API for application code while keeping provider-specific protocol handling internal.
+
+## Stable public API
 
 - `ProviderConfig`
 - `GenerateRequest`
@@ -12,14 +14,19 @@
 - `ImageClient.generate_image()`
 - `ImageClient.edit_image()`
 
-## 内部协议支持
+## Internal protocol support
 
 - `openai_images`
 - `openai_chat`
 - `gemini_generate_content`
 
-## 设计目标
+## Design goals
 
-- 业务层不感知协议差异
-- 供应商差异通过 `extra_params` 下沉
-- 在不扩大公共 API 的前提下保留兼容面
+- Keep application code unaware of protocol differences
+- Push provider variation into explicit extension points
+- Preserve compatibility without expanding the public API unnecessarily
+
+## Language
+
+- English README: `README.md`
+- Chinese README: `README.zh-CN.md`
