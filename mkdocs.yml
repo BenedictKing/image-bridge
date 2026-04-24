@@ -1,0 +1,24 @@
+site_name: image-models
+site_description: Shared image generation/editing abstraction
+site_url: https://example.invalid/image-models
+repo_name: image-models
+
+theme:
+  name: material
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths:
+            - src
+          options:
+            show_root_heading: true
+            show_source: false
+            members_order: source
+
+nav:
+  - 首页: index.md
+  - API:
+      - image_models: api.md
