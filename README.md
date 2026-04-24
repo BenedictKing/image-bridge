@@ -95,6 +95,53 @@ Notes:
 
 This keeps the semantics of `EditRequest.mask` explicit and avoids protocol-specific ambiguity.
 
+## Live tests
+
+The repository includes opt-in live tests that call real upstream APIs and models through the public API.
+
+Use them to verify that `image-bridge` still works as a dependency in downstream projects under real provider conditions.
+
+Default behavior:
+
+- Live tests do **not** run as part of normal `pytest`
+- They may consume API quota and are subject to provider rate limits or transient upstream failures
+
+Minimum environment variables:
+
+You can start by copying `.env.example` to `.env` and filling in only the providers you want to exercise.
+
+```bash
+export IMAGE_BRIDGE_OPENAI_API_KEY=...
+export IMAGE_BRIDGE_OPENAI_MODEL=gpt-image-1
+export IMAGE_BRIDGE_GEMINI_API_KEY=...
+export IMAGE_BRIDGE_GEMINI_MODEL=gemini-2.5-flash-image-preview
+```
+
+Optional environment variables:
+
+```bash
+export IMAGE_BRIDGE_OPENAI_BASE_URL=https://api.openai.com/v1
+export IMAGE_BRIDGE_GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta
+export IMAGE_BRIDGE_LIVE_TIMEOUT_SECONDS=300
+```
+
+Run all live tests:
+
+```bash
+uv run --extra test python -m pytest --run-live tests/live -q
+```
+
+Run a single live case:
+
+```bash
+uv run --extra test python -m pytest --run-live --live-case openai-images-generate tests/live/test_generate.py -q
+```
+
+Current boundaries:
+
+- `openai_chat` does not support `mask`
+- `gemini_generate_content` currently does not expose a public `mask` mapping
+
 ## Automated API documentation
 
 The project includes MkDocs + mkdocstrings configuration:

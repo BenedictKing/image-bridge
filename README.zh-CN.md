@@ -95,6 +95,53 @@ client = ImageClient(
 
 这样可以确保 `EditRequest.mask` 的语义足够明确，不会因为协议不同而产生误解。
 
+## Live 测试
+
+仓库内置了一组可选的 live 测试，会通过公共 API 调用真实上游接口和真实模型。
+
+它们的目的，是验证 `image-bridge` 在真实供应商环境下作为下游项目依赖仍然可用。
+
+默认行为：
+
+- 普通 `pytest` 不会自动执行 live 测试
+- live 测试会消耗 API 配额，并可能受到上游限流或瞬时波动影响
+
+最小环境变量：
+
+可以先复制 `.env.example` 为 `.env`，只填写你准备验证的 provider。
+
+```bash
+export IMAGE_BRIDGE_OPENAI_API_KEY=...
+export IMAGE_BRIDGE_OPENAI_MODEL=gpt-image-1
+export IMAGE_BRIDGE_GEMINI_API_KEY=...
+export IMAGE_BRIDGE_GEMINI_MODEL=gemini-2.5-flash-image-preview
+```
+
+可选环境变量：
+
+```bash
+export IMAGE_BRIDGE_OPENAI_BASE_URL=https://api.openai.com/v1
+export IMAGE_BRIDGE_GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta
+export IMAGE_BRIDGE_LIVE_TIMEOUT_SECONDS=300
+```
+
+运行全部 live 测试：
+
+```bash
+uv run --extra test python -m pytest --run-live tests/live -q
+```
+
+只运行单个 live case：
+
+```bash
+uv run --extra test python -m pytest --run-live --live-case openai-images-generate tests/live/test_generate.py -q
+```
+
+当前边界：
+
+- `openai_chat` 不支持 `mask`
+- `gemini_generate_content` 当前不对公共 `mask` 做映射承诺
+
 ## 自动化 API 文档
 
 项目已提供 MkDocs + mkdocstrings 配置：

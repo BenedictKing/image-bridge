@@ -1,6 +1,7 @@
 __pycache__/
 .pytest_cache/
 .venv/
+.env
 site/
 *.pyc
 .DS_Store

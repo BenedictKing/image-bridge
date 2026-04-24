@@ -36,6 +36,11 @@ packages = ["src/image_bridge"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
+markers = [
+    "live: tests that call real upstream provider APIs",
+    "live_generate: live tests for generate_image",
+    "live_edit: live tests for edit_image",
+]
 
 [tool.ruff]
 line-length = 100
