@@ -4,7 +4,7 @@ import base64
 
 import pytest
 
-from image_models.client import (
+from pixelbridge.client import (
     ImageClientError,
     _extract_gemini_image,
     _extract_openai_chat_data_url,

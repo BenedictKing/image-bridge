@@ -1,7 +1,7 @@
-"""Shared image generation/editing abstraction for multiple providers."""
+"""Pixelbridge: shared image generation/editing abstraction for multiple providers."""
 
-from image_models.client import ImageClient
-from image_models.types import (
+from pixelbridge.client import ImageClient
+from pixelbridge.types import (
     EditRequest,
     GenerateRequest,
     ImageEditInput,

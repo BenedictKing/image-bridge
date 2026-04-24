@@ -1,13 +1,13 @@
 # API Reference
 
-## image_models
+## pixelbridge
 
-::: image_models
+::: pixelbridge
 
-## image_models.types
+## pixelbridge.types
 
-::: image_models.types
+::: pixelbridge.types
 
-## image_models.client
+## pixelbridge.client
 
-::: image_models.client
+::: pixelbridge.client

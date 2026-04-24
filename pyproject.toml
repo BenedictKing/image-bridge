@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "image-models"
+name = "pixelbridge"
 version = "0.1.0"
 description = "Stable shared image generation/editing abstraction"
 readme = "README.md"
@@ -30,7 +30,7 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/image_models"]
+packages = ["src/pixelbridge"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

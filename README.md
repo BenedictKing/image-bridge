@@ -1,4 +1,4 @@
-# Image Models
+# pixelbridge
 统一多供应商图片生成/编辑抽象包。
 
 用于 best-shot 和 best-outfit 共享图片模型访问层。
@@ -23,7 +23,7 @@
 ## 快速开始
 
 ```python
-from image_models import GenerateRequest, ImageClient, ImageProvider, ProviderConfig
+from pixelbridge import GenerateRequest, ImageClient, ImageProvider, ProviderConfig
 
 client = ImageClient(
     ProviderConfig(
