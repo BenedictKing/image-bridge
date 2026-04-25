@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 import base64
+import hashlib
+import json
+import logging
+import os
 import re
 from abc import ABC, abstractmethod
 from typing import Any
@@ -14,6 +18,8 @@ from image_bridge.types import (
     ImageResult,
     ProviderConfig,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class ImageClientError(RuntimeError):
@@ -85,6 +91,7 @@ class OpenAIImagesAdapter(ProviderAdapter):
 
     async def generate_image(self, http: httpx.AsyncClient, request: GenerateRequest) -> ImageResult:
         payload = _build_openai_images_generate_payload(self.config, request)
+        _log_upstream_request("openai_images.generate", payload)
         response = await http.post(
             f"{self.config.base_url.rstrip('/')}/images/generations",
             headers=_build_json_headers(self.config),
@@ -102,6 +109,7 @@ class OpenAIImagesAdapter(ProviderAdapter):
 
     async def edit_image(self, http: httpx.AsyncClient, request: EditRequest) -> ImageResult:
         payload = _build_openai_images_edit_payload(self.config, request)
+        _log_upstream_request("openai_images.edit", payload)
         response = await http.post(
             f"{self.config.base_url.rstrip('/')}/images/edits",
             headers=_build_json_headers(self.config),
@@ -123,6 +131,7 @@ class OpenAIChatAdapter(ProviderAdapter):
 
     async def generate_image(self, http: httpx.AsyncClient, request: GenerateRequest) -> ImageResult:
         payload = _build_openai_chat_generate_payload(self.config, request)
+        _log_upstream_request("openai_chat.generate", payload)
         response = await http.post(
             f"{self.config.base_url.rstrip('/')}/chat/completions",
             headers=_build_json_headers(self.config),
@@ -140,6 +149,7 @@ class OpenAIChatAdapter(ProviderAdapter):
 
     async def edit_image(self, http: httpx.AsyncClient, request: EditRequest) -> ImageResult:
         payload = _build_openai_chat_edit_payload(self.config, request)
+        _log_upstream_request("openai_chat.edit", payload)
         response = await http.post(
             f"{self.config.base_url.rstrip('/')}/chat/completions",
             headers=_build_json_headers(self.config),
@@ -167,6 +177,7 @@ class GeminiAdapter(ProviderAdapter):
         }
         payload.update(_public_extra_params(self.config.extra_params))
         payload.update(_public_extra_params(request.extra_params))
+        _log_upstream_request("gemini.generate", payload)
 
         response = await http.post(
             f"{self.config.base_url.rstrip('/')}/models/{self.config.model}:generateContent?key={self.config.api_key}",
@@ -203,6 +214,7 @@ class GeminiAdapter(ProviderAdapter):
         }
         payload.update(_public_extra_params(self.config.extra_params))
         payload.update(_public_extra_params(request.extra_params))
+        _log_upstream_request("gemini.edit", payload)
 
         response = await http.post(
             f"{self.config.base_url.rstrip('/')}/models/{self.config.model}:generateContent?key={self.config.api_key}",
@@ -252,6 +264,62 @@ def _build_json_headers(config: ProviderConfig) -> dict[str, str]:
 
 def _public_extra_params(extra_params: dict[str, Any]) -> dict[str, Any]:
     return {k: v for k, v in extra_params.items() if not k.startswith("_")}
+
+
+def _is_request_logging_enabled() -> bool:
+    value = os.getenv("IMAGE_BRIDGE_LOG_UPSTREAM_REQUESTS", "")
+    return value.lower() in {"1", "true", "yes", "on"}
+
+
+def _redact_payload_for_logging(value: Any) -> Any:
+    if isinstance(value, dict):
+        if "image_url" in value and isinstance(value["image_url"], dict):
+            image_url = value["image_url"].get("url")
+            if isinstance(image_url, str):
+                return {
+                    **value,
+                    "image_url": {
+                        **value["image_url"],
+                        "url": _summarize_data_url(image_url),
+                    },
+                }
+        if "data" in value and isinstance(value["data"], str):
+            return {
+                **value,
+                "data": _summarize_base64_data(value["data"]),
+            }
+        return {key: _redact_payload_for_logging(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_redact_payload_for_logging(item) for item in value]
+    return value
+
+
+def _summarize_data_url(value: str) -> str:
+    decoded = _extract_openai_chat_data_url(value)
+    if decoded is None:
+        return value
+    image_bytes, mime_type = decoded
+    digest = hashlib.sha256(image_bytes).hexdigest()[:12]
+    return f"data:{mime_type};sha256={digest};bytes={len(image_bytes)}"
+
+
+def _summarize_base64_data(value: str) -> str:
+    try:
+        image_bytes = base64.b64decode(value)
+    except Exception:
+        return f"base64:chars={len(value)}"
+    digest = hashlib.sha256(image_bytes).hexdigest()[:12]
+    return f"base64:sha256={digest};bytes={len(image_bytes)}"
+
+
+def _log_upstream_request(endpoint: str, payload: dict[str, Any]) -> None:
+    if not _is_request_logging_enabled():
+        return
+    logger.warning(
+        "ImageBridge upstream request %s\n%s",
+        endpoint,
+        json.dumps(_redact_payload_for_logging(payload), ensure_ascii=False, indent=2, sort_keys=True),
+    )
 
 
 def _build_openai_images_generate_payload(config: ProviderConfig, request: GenerateRequest) -> dict[str, Any]:

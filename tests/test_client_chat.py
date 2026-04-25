@@ -7,6 +7,7 @@ from image_bridge.client import (
     ImageClientError,
     _build_openai_chat_edit_payload,
     _build_openai_chat_generate_payload,
+    _redact_payload_for_logging,
 )
 from image_bridge.types import EditRequest, GenerateRequest, ImageEditInput, ImageProvider, ProviderConfig
 
@@ -68,6 +69,28 @@ def test_build_openai_chat_edit_payload_rejects_mask() -> None:
                 mask=ImageEditInput(data=b"mask", mime_type="image/png", name="mask.png"),
             ),
         )
+
+
+def test_redact_payload_for_logging_summarizes_embedded_images() -> None:
+    payload = _build_openai_chat_edit_payload(
+        ProviderConfig(
+            provider=ImageProvider.OPENAI,
+            api_key="key",
+            model="gpt-image-2",
+            base_url="https://api.openai.com/v1",
+            extra_params={"_protocol": "openai_chat"},
+        ),
+        EditRequest(
+            prompt="make it brighter",
+            images=[ImageEditInput(data=b"png-bytes", mime_type="image/png")],
+        ),
+    )
+
+    redacted = _redact_payload_for_logging(payload)
+    image_url = redacted["messages"][0]["content"][1]["image_url"]["url"]
+    assert image_url.startswith("data:image/png;sha256=")
+    assert "bytes=" in image_url
+    assert "base64" not in image_url
 
 
 def test_image_client_uses_chat_adapter_when_protocol_overridden() -> None:

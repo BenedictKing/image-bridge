@@ -137,6 +137,18 @@ Run a single live case:
 uv run --extra test python -m pytest --run-live --live-case openai-images-generate tests/live/test_generate.py -q
 ```
 
+Replay the reusable person-holds-cat then cat-to-dog edit case:
+
+```bash
+uv run --env-file .env --extra test python -m pytest --run-live --live-case openai-chat-edit-person-cat-to-dog tests/live/test_edit.py -q
+```
+
+To print sanitized upstream request payloads during debugging:
+
+```bash
+IMAGE_BRIDGE_LOG_UPSTREAM_REQUESTS=1 uv run --env-file .env --extra test python -m pytest --run-live --live-case openai-chat-edit-person-cat-to-dog tests/live/test_edit.py -q -o log_cli=true --log-cli-level=WARNING
+```
+
 Current boundaries:
 
 - `openai_chat` does not support `mask`

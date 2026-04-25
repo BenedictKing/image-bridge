@@ -23,6 +23,8 @@ class LiveCase:
     config_env_prefix: str
     use_mask: bool = False
     generate_before_edit: bool = False
+    generate_prompt: str = "A minimal test image with a single geometric shape on a plain background."
+    edit_prompt: str = "Create a visibly different variant while keeping the subject simple."
 
     def build_config(self) -> ProviderConfig:
         timeout_value = os.getenv("IMAGE_BRIDGE_LIVE_TIMEOUT_SECONDS")
@@ -41,7 +43,7 @@ class LiveCase:
 
     def build_generate_request(self) -> GenerateRequest:
         return GenerateRequest(
-            prompt="A minimal test image with a single geometric shape on a plain background.",
+            prompt=self.generate_prompt,
             size="1024x1024",
         )
 
@@ -49,7 +51,7 @@ class LiveCase:
         image = ImageEditInput(data=minimal_png_bytes(), mime_type="image/png")
         mask = ImageEditInput(data=minimal_png_bytes(), mime_type="image/png", name="mask.png")
         return EditRequest(
-            prompt="Create a visibly different variant while keeping the subject simple.",
+            prompt=self.edit_prompt,
             images=[image],
             mask=mask if self.use_mask else None,
         )
@@ -113,6 +115,17 @@ EDIT_CASES = [
         required_env=("IMAGE_BRIDGE_OPENAI_API_KEY", "IMAGE_BRIDGE_OPENAI_MODEL"),
         config_env_prefix="IMAGE_BRIDGE_OPENAI",
         generate_before_edit=True,
+    ),
+    LiveCase(
+        id="openai-chat-edit-person-cat-to-dog",
+        provider="openai",
+        protocol="openai_chat",
+        capability="edit",
+        required_env=("IMAGE_BRIDGE_OPENAI_API_KEY", "IMAGE_BRIDGE_OPENAI_MODEL"),
+        config_env_prefix="IMAGE_BRIDGE_OPENAI",
+        generate_before_edit=True,
+        generate_prompt="写实摄影风格，单人半身正面肖像，一名成年人双手抱着一只猫，猫完整可见，人物与猫位于画面中央，背景为纯浅灰色，无其他物体或装饰，光线均匀，构图简单清晰。",
+        edit_prompt="基于输入图片做最小必要修改，不要重绘整张图。保留同一个人物、相同的脸、发型、衣服、手部位置、抱姿、镜头角度、构图、背景、光线和色调。仅将人物怀里的猫替换为一只体型相近的小狗，位置、朝向、大小与原猫尽量一致，使其看起来像在原图上局部编辑后的结果。除把猫改成狗之外，不要改变任何其他内容。",
     ),
     LiveCase(
         id="gemini-edit-reference",
