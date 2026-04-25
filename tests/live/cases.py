@@ -22,6 +22,7 @@ class LiveCase:
     required_env: tuple[str, ...]
     config_env_prefix: str
     use_mask: bool = False
+    generate_before_edit: bool = False
 
     def build_config(self) -> ProviderConfig:
         timeout_value = os.getenv("IMAGE_BRIDGE_LIVE_TIMEOUT_SECONDS")
@@ -111,6 +112,7 @@ EDIT_CASES = [
         capability="edit",
         required_env=("IMAGE_BRIDGE_OPENAI_API_KEY", "IMAGE_BRIDGE_OPENAI_MODEL"),
         config_env_prefix="IMAGE_BRIDGE_OPENAI",
+        generate_before_edit=True,
     ),
     LiveCase(
         id="gemini-edit-reference",

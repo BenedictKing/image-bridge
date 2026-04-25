@@ -4,6 +4,7 @@ import pytest
 
 from image_bridge import ImageClient, ImageResult
 
+from tests.live.assets import write_live_image
 from tests.live.cases import GENERATE_CASES, LiveCase
 
 
@@ -17,6 +18,8 @@ async def test_live_generate_matrix(live_case: LiveCase, request: pytest.Fixture
         result = await client.generate_image(live_case.build_generate_request())
     finally:
         await client.close()
+
+    write_live_image(live_case.id, "generated", result.image_bytes, result.mime_type)
 
     assert isinstance(result, ImageResult)
     assert result.image_bytes

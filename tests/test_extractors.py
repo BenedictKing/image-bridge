@@ -9,6 +9,7 @@ from image_bridge.client import (
     _extract_gemini_image,
     _extract_openai_chat_data_url,
     _extract_openai_chat_image_part,
+    _extract_openai_chat_image_url,
     _extract_openai_image,
 )
 

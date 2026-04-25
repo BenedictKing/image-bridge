@@ -23,7 +23,7 @@ class ImageClientError(RuntimeError):
 class ProviderAdapter(ABC):
     """Internal protocol adapter used by ``ImageClient`` implementations."""
 
-    _MARKDOWN_IMAGE_URL_RE = re.compile(r"!\[[^\]]*\]\((https?://[^)]+)\)")
+    _MARKDOWN_IMAGE_URL_RE = re.compile(r"!\[[^\]]*\]\(((?:https?://|data:)[^)]+)\)")
 
     def __init__(self, config: ProviderConfig) -> None:
         self.config = config
@@ -466,6 +466,9 @@ async def _extract_openai_chat_image(
         return image_part
     image_url = _extract_openai_chat_image_url(message)
     if image_url:
+        decoded = _extract_openai_chat_data_url(image_url)
+        if decoded is not None:
+            return decoded
         return await _download_image_from_url(http, image_url)
     raise ImageClientError(
         f"Chat completions endpoint returned no image. Model said: {_extract_openai_chat_text(payload) or 'No text returned.'}"
