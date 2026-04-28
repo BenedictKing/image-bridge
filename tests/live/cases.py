@@ -23,6 +23,7 @@ class LiveCase:
     config_env_prefix: str
     use_mask: bool = False
     generate_before_edit: bool = False
+    pre_edit_generate_prompts: tuple[str, ...] = ()
     generate_prompt: str = "A minimal test image with a single geometric shape on a plain background."
     edit_prompt: str = "Create a visibly different variant while keeping the subject simple."
 
@@ -46,6 +47,16 @@ class LiveCase:
             prompt=self.generate_prompt,
             size="1024x1024",
         )
+
+    def build_pre_edit_generate_requests(self) -> list[GenerateRequest]:
+        if self.pre_edit_generate_prompts:
+            return [
+                GenerateRequest(prompt=prompt, size="1024x1024")
+                for prompt in self.pre_edit_generate_prompts
+            ]
+        if self.generate_before_edit:
+            return [self.build_generate_request()]
+        return []
 
     def build_edit_request(self) -> EditRequest:
         image = ImageEditInput(data=minimal_png_bytes(), mime_type="image/png")
@@ -106,6 +117,20 @@ EDIT_CASES = [
         required_env=("IMAGE_BRIDGE_OPENAI_API_KEY", "IMAGE_BRIDGE_OPENAI_MODEL"),
         config_env_prefix="IMAGE_BRIDGE_OPENAI",
         use_mask=True,
+    ),
+    LiveCase(
+        id="openai-images-edit-multi-reference-compose",
+        provider="openai",
+        protocol="openai_images",
+        capability="edit",
+        required_env=("IMAGE_BRIDGE_OPENAI_API_KEY", "IMAGE_BRIDGE_OPENAI_MODEL"),
+        config_env_prefix="IMAGE_BRIDGE_OPENAI",
+        pre_edit_generate_prompts=(
+            "A single glossy red ceramic mug, centered, isolated as a clean studio product photo, soft shadow, plain light gray background, no text, no extra objects.",
+            "A single small cactus in a white ceramic pot, centered, isolated as a clean studio product photo, soft shadow, plain light gray background, no text, no extra objects.",
+            "A single compact silver retro camera, centered, isolated as a clean studio product photo, soft shadow, plain light gray background, no text, no extra objects.",
+        ),
+        edit_prompt="Using all provided reference images, create a single cohesive lifestyle product scene on a light wooden desk near a window. Preserve the identity of each referenced object: the glossy red ceramic mug, the small cactus in a white ceramic pot, and the compact silver retro camera. Arrange them naturally together in one composition with soft daylight, realistic shadows, clean editorial photography, no text, no extra objects.",
     ),
     LiveCase(
         id="openai-chat-edit",
