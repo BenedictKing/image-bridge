@@ -138,16 +138,16 @@ uv run --extra test python -m pytest --run-live tests/live -q
 uv run --extra test python -m pytest --run-live --live-case openai-images-generate tests/live/test_generate.py -q
 ```
 
-复跑可复用的“一个人抱猫，再把猫改成狗” case：
+复跑可复用的“游人游园，再去掉人物” case：
 
 ```bash
-uv run --env-file .env --extra test python -m pytest --run-live --live-case openai-chat-edit-person-cat-to-dog tests/live/test_edit.py -q
+uv run --env-file .env --extra test python -m pytest --run-live --live-case openai-chat-edit-garden-remove-people tests/live/test_edit.py -q
 ```
 
 如需调试时打印脱敏后的上游请求 payload：
 
 ```bash
-IMAGE_BRIDGE_LOG_UPSTREAM_REQUESTS=1 uv run --env-file .env --extra test python -m pytest --run-live --live-case openai-chat-edit-person-cat-to-dog tests/live/test_edit.py -q -o log_cli=true --log-cli-level=WARNING
+IMAGE_BRIDGE_LOG_UPSTREAM_REQUESTS=1 uv run --env-file .env --extra test python -m pytest --run-live --live-case openai-chat-edit-garden-remove-people tests/live/test_edit.py -q -o log_cli=true --log-cli-level=WARNING
 ```
 
 当前边界：

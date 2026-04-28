@@ -128,6 +128,17 @@ EDIT_CASES = [
         edit_prompt="基于输入图片做最小必要修改，不要重绘整张图。保留同一个人物、相同的脸、发型、衣服、手部位置、抱姿、镜头角度、构图、背景、光线和色调。仅将人物怀里的猫替换为一只体型相近的小狗，位置、朝向、大小与原猫尽量一致，使其看起来像在原图上局部编辑后的结果。除把猫改成狗之外，不要改变任何其他内容。",
     ),
     LiveCase(
+        id="openai-chat-edit-garden-remove-people",
+        provider="openai",
+        protocol="openai_chat",
+        capability="edit",
+        required_env=("IMAGE_BRIDGE_OPENAI_API_KEY", "IMAGE_BRIDGE_OPENAI_MODEL"),
+        config_env_prefix="IMAGE_BRIDGE_OPENAI",
+        generate_before_edit=True,
+        generate_prompt="写实摄影风格的中式古典园林景观。白天，一座带有亭台、回廊、假山、池水和树木的园林，三到五名游人正在园中漫步赏景，人物分布自然，主体清晰，构图完整，背景细节丰富，光线柔和自然。",
+        edit_prompt="基于输入图片做最小必要修改，不要重绘整张图。保留原图中的园林建筑、亭台、回廊、假山、池水、树木、花草、地面纹理、镜头角度、构图、透视、光线、色调与整体风格。仅移除画面中所有可见人物，并自然补全人物原先遮挡的路径、栏杆、植物、水面或建筑细节，使结果看起来像同一张园林照片做了局部修复。除去掉人物外，不要改变其他内容。",
+    ),
+    LiveCase(
         id="gemini-edit-reference",
         provider="gemini",
         protocol="gemini_generate_content",
