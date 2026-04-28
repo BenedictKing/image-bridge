@@ -90,6 +90,7 @@ Notes:
 ## Mask support boundaries
 
 - `openai_images` and compatible `/images/edits` flows support `EditRequest.mask`
+- `openai_images` sends `/images/edits` requests as `multipart/form-data` for image and mask uploads, matching upstream documentation rather than using JSON
 - `gemini_generate_content` currently supports reference images but does not explicitly map the public `mask` field
 - `openai_chat` currently **does not support mask** and will raise a clear error instead of pretending to support it
 

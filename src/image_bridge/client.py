@@ -109,11 +109,13 @@ class OpenAIImagesAdapter(ProviderAdapter):
 
     async def edit_image(self, http: httpx.AsyncClient, request: EditRequest) -> ImageResult:
         payload = _build_openai_images_edit_payload(self.config, request)
+        form_data, form_files = _build_openai_images_edit_multipart_request(self.config, request)
         _log_upstream_request("openai_images.edit", payload)
         response = await http.post(
             f"{self.config.base_url.rstrip('/')}/images/edits",
-            headers=_build_json_headers(self.config),
-            json=payload,
+            headers=_build_auth_headers(self.config),
+            data=form_data,
+            files=form_files,
         )
         response.raise_for_status()
         payload_json = response.json()
@@ -253,12 +255,18 @@ def _resolve_protocol(config: ProviderConfig) -> str:
     raise ImageClientError(f"Unsupported image provider: {config.provider}")
 
 
-def _build_json_headers(config: ProviderConfig) -> dict[str, str]:
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {config.api_key}",
-    }
+def _build_auth_headers(config: ProviderConfig) -> dict[str, str]:
+    headers = {"Authorization": f"Bearer {config.api_key}"}
     headers.update(config.extra_headers)
+    for key in tuple(headers):
+        if key.lower() == "content-type":
+            headers.pop(key)
+    return headers
+
+
+def _build_json_headers(config: ProviderConfig) -> dict[str, str]:
+    headers = _build_auth_headers(config)
+    headers["Content-Type"] = "application/json"
     return headers
 
 
@@ -378,6 +386,52 @@ def _build_openai_images_edit_payload(config: ProviderConfig, request: EditReque
     payload.update(_public_extra_params(config.extra_params))
     payload.update(_public_extra_params(request.extra_params))
     return payload
+
+
+def _build_openai_images_edit_multipart_request(
+    config: ProviderConfig,
+    request: EditRequest,
+) -> tuple[dict[str, str], list[tuple[str, tuple[str, bytes, str]]]]:
+    if not request.images:
+        raise ImageClientError("edit_image requires at least one input image")
+
+    form_data: dict[str, str] = {
+        "model": config.model,
+        "prompt": request.prompt,
+    }
+    if request.size:
+        form_data["size"] = request.size
+    if request.quality:
+        form_data["quality"] = request.quality
+    if request.output_format:
+        form_data["output_format"] = request.output_format
+    if request.background:
+        form_data["background"] = request.background
+    if request.moderation:
+        form_data["moderation"] = request.moderation
+    form_data.update(_build_multipart_form_fields(_public_extra_params(config.extra_params)))
+    form_data.update(_build_multipart_form_fields(_public_extra_params(request.extra_params)))
+
+    form_files: list[tuple[str, tuple[str, bytes, str]]] = [
+        ("image[]", (image.name, image.data, image.mime_type)) for image in request.images
+    ]
+    if request.mask is not None:
+        form_files.append(
+            ("mask", (request.mask.name, request.mask.data, request.mask.mime_type))
+        )
+    return form_data, form_files
+
+
+def _build_multipart_form_fields(fields: dict[str, Any]) -> dict[str, str]:
+    return {key: _stringify_multipart_form_value(value) for key, value in fields.items()}
+
+
+def _stringify_multipart_form_value(value: Any) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, (str, int, float)):
+        return str(value)
+    return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
 
 
 def _build_openai_chat_generate_payload(config: ProviderConfig, request: GenerateRequest) -> dict[str, Any]:

@@ -90,6 +90,7 @@ client = ImageClient(
 ## mask 支持边界
 
 - `openai_images` 和兼容 `/images/edits` 的路径支持 `EditRequest.mask`
+- `openai_images` 的 `/images/edits` 请求会按上游文档使用 `multipart/form-data` 发送图片与 mask，而不是 JSON
 - `gemini_generate_content` 当前支持参考图，但没有显式映射公共 `mask` 字段
 - `openai_chat` 当前**不支持 mask**，会直接抛出清晰错误，而不是做伪兼容
 

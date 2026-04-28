@@ -5,8 +5,10 @@ import pytest
 from image_bridge.client import (
     ImageClient,
     ImageClientError,
+    _build_auth_headers,
     _build_openai_chat_edit_payload,
     _build_openai_chat_generate_payload,
+    _build_openai_images_edit_multipart_request,
     _redact_payload_for_logging,
 )
 from image_bridge.types import EditRequest, GenerateRequest, ImageEditInput, ImageProvider, ProviderConfig
@@ -69,6 +71,49 @@ def test_build_openai_chat_edit_payload_rejects_mask() -> None:
                 mask=ImageEditInput(data=b"mask", mime_type="image/png", name="mask.png"),
             ),
         )
+
+
+def test_build_openai_images_edit_multipart_request_uses_image_array_and_mask_fields() -> None:
+    form_data, form_files = _build_openai_images_edit_multipart_request(
+        ProviderConfig(
+            provider=ImageProvider.OPENAI,
+            api_key="key",
+            model="gpt-image-2",
+            base_url="https://api.openai.com/v1",
+            extra_params={"_protocol": "openai_images", "stream": True},
+        ),
+        EditRequest(
+            prompt="edit it",
+            images=[ImageEditInput(data=b"img", mime_type="image/png", name="input.png")],
+            mask=ImageEditInput(data=b"mask", mime_type="image/png", name="mask.png"),
+            quality="high",
+            extra_params={"partial_images": 2},
+        ),
+    )
+
+    assert form_data["model"] == "gpt-image-2"
+    assert form_data["prompt"] == "edit it"
+    assert form_data["quality"] == "high"
+    assert form_data["stream"] == "true"
+    assert form_data["partial_images"] == "2"
+    assert form_files[0] == ("image[]", ("input.png", b"img", "image/png"))
+    assert form_files[1] == ("mask", ("mask.png", b"mask", "image/png"))
+
+
+def test_build_auth_headers_keeps_auth_and_drops_content_type() -> None:
+    headers = _build_auth_headers(
+        ProviderConfig(
+            provider=ImageProvider.OPENAI,
+            api_key="key",
+            model="gpt-image-2",
+            base_url="https://api.openai.com/v1",
+            extra_headers={"Content-Type": "application/json", "X-Test": "1"},
+        )
+    )
+
+    assert headers["Authorization"] == "Bearer key"
+    assert headers["X-Test"] == "1"
+    assert "Content-Type" not in headers
 
 
 def test_redact_payload_for_logging_summarizes_embedded_images() -> None:
